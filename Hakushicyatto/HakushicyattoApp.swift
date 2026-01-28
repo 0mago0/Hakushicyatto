@@ -9,6 +9,10 @@ import SwiftUI
 
 @main
 struct HakushicyattoApp: App {
+    init() {
+        installSVGKitPPIHotfix()
+    }
+    
     var body: some Scene {
         WindowGroup {
             ChatView()

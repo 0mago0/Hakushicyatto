@@ -345,6 +345,9 @@ class ChatService: NSObject, ObservableObject {
                 print("❌ 響應中沒有 SVG 附件")
                 throw NSError(domain: "No SVG in response", code: -1)
             }
+
+            // 確保檔案已可讀取，避免第一張剛上傳就讀不到
+            try await waitUntilSVGReachable(attachment: attachment)
             
             print("✅ SVG 上傳成功!")
             print("   SVG ID: \(attachment.id)")
@@ -357,6 +360,39 @@ class ChatService: NSObject, ObservableObject {
             print("❌ SVG 上傳錯誤: \(error)")
             throw error
         }
+    }
+
+    /// Cloudflare R2 可能有輕微延遲，輪詢直到檔案可讀，提升首張 SVG 成功率
+    private func waitUntilSVGReachable(attachment: SvgAttachment, maxAttempts: Int = 4) async throws {
+        let fullURL = fullSVGURL(attachment.url)
+        var attempt = 0
+
+        while attempt < maxAttempts {
+            do {
+                var request = URLRequest(url: fullURL)
+                request.httpMethod = "HEAD"
+                let (_, response) = try await URLSession.shared.data(for: request)
+                if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
+                    return
+                }
+            } catch {
+                // ignore and retry
+            }
+            attempt += 1
+            let delay = UInt64(pow(2.0, Double(attempt - 1)) * 0.4 * 1_000_000_000) // 0.4s,0.8s,1.6s...
+            try? await Task.sleep(nanoseconds: delay)
+        }
+
+        throw NSError(domain: "SVG not reachable after upload", code: -2)
+    }
+
+    private func fullSVGURL(_ relativePath: String) -> URL {
+        if relativePath.lowercased().hasPrefix("http://") || relativePath.lowercased().hasPrefix("https://") {
+            return URL(string: relativePath)!
+        }
+        let normalized = relativePath.hasPrefix("/") ? String(relativePath.dropFirst()) : relativePath
+        let urlString = "\(NetworkConfig.apiBaseURL)/\(normalized)"
+        return URL(string: urlString)!
     }
     
     // MARK: - Cleanup

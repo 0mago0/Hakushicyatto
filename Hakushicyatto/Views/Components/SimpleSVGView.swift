@@ -23,7 +23,7 @@ struct SimpleSVGView: View {
     @State private var lastURL: String?
     @State private var retryCount = 0
     
-    private let maxRetries = 3
+    private let maxRetries = 5
     
     var body: some View {
         content
@@ -117,11 +117,12 @@ struct SimpleSVGView: View {
             phase = .failure
             return
         }
-        
+
         retryCount += 1
         phase = .loading
-        
-        let delaySeconds = Double(retryCount) // 1s, 2s, 3s
+
+        // Exponential backoff: 0.3s, 0.6s, 1.2s, 2.4s, 4.8s
+        let delaySeconds = pow(2.0, Double(retryCount - 1)) * 0.3
         try? await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
         await load()
     }
