@@ -90,12 +90,12 @@ struct DrawingSheet: View {
                         Button(action: {
                             print("📤 開始上傳，當前有 \(pkDrawing.strokes.count) 筆劃")
                             Task {
-                                await uploadAndClose()
+                                await uploadAndContinue()
                             }
                         }) {
                             HStack {
                                 Image(systemName: "paperplane.fill")
-                                Text("發送")
+                                Text("發送並繼續")
                             }
                             .frame(maxWidth: .infinity)
                             .padding(10)
@@ -118,7 +118,8 @@ struct DrawingSheet: View {
         .background(Color.white)
     }
     
-    private func uploadAndClose() async {
+    /// 上傳當前筆跡並讓使用者可以繼續寫下一個字
+    private func uploadAndContinue() async {
         isSending = true
         errorMessage = nil
         
@@ -149,8 +150,9 @@ struct DrawingSheet: View {
             
             DispatchQueue.main.async {
                 onSaveSVG(svgAttachment)
+                // 清空畫布以便接續寫下一個字，維持同一則訊息 ID
+                pkDrawing = PKDrawing()
                 isSending = false
-                isPresented = false
             }
         } catch {
             let errorMsg = "上傳失敗: \(error.localizedDescription)"

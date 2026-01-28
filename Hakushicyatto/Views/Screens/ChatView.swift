@@ -6,18 +6,15 @@
 //
 
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct ChatView: View {
     @StateObject var chatService = ChatService()
     @State private var showDrawing = false
     @State private var showNameInput = false
     @State private var showPairingSheet = false
-    @State private var showFilePicker = false
     @State private var messageText = ""
     @State private var pendingSvgs: [SvgAttachment] = []
     @State private var currentMessageId: String?
-    @State private var isUploading = false
     @State private var showCopyRoomAlert = false
     
     var body: some View {
@@ -127,13 +124,6 @@ struct ChatView: View {
                 // Input Area
                 VStack(spacing: 8) {
                     HStack(spacing: 8) {
-                        Button(action: { showFilePicker = true }) {
-                            Image(systemName: isUploading ? "hourglass" : "paperclip")
-                                .font(.system(size: 18))
-                                .foregroundColor(isUploading ? .gray : .blue)
-                        }
-                        .disabled(isUploading)
-
                         Button(action: { showDrawing = true }) {
                             Image(systemName: "pencil.tip")
                                 .font(.system(size: 18))
@@ -148,7 +138,7 @@ struct ChatView: View {
                                 .font(.system(size: 18))
                                 .foregroundColor(.blue)
                         }
-                        .disabled((messageText.trimmingCharacters(in: .whitespaces).isEmpty && pendingSvgs.isEmpty) || !chatService.isConnected || isUploading)
+                        .disabled((messageText.trimmingCharacters(in: .whitespaces).isEmpty && pendingSvgs.isEmpty) || !chatService.isConnected)
                     }
                     .padding(.horizontal)
                     .padding(.vertical, 8)
@@ -200,14 +190,6 @@ struct ChatView: View {
         .onDisappear {
             chatService.disconnect()
         }
-        .sheet(isPresented: $showFilePicker) {
-            let svgTypes = [UTType.svg, UTType(filenameExtension: "svg")].compactMap { $0 }
-            DocumentPicker(types: svgTypes) { urls in
-                Task {
-                    await handleImportedFiles(urls)
-                }
-            }
-        }
     }
     
     private func sendMessage() {
@@ -225,37 +207,6 @@ struct ChatView: View {
             pendingSvgs = []
             currentMessageId = nil
         }
-    }
-    
-    @MainActor
-    private func handleImportedFiles(_ urls: [URL]) async {
-        guard !urls.isEmpty else { return }
-        isUploading = true
-        var ensuredMessageId = currentMessageId ?? UUID().uuidString
-        if currentMessageId == nil {
-            currentMessageId = ensuredMessageId
-        }
-        
-        for url in urls {
-            let accessible = url.startAccessingSecurityScopedResource()
-            defer {
-                if accessible { url.stopAccessingSecurityScopedResource() }
-            }
-            
-            do {
-                let data = try Data(contentsOf: url)
-                let attachment = try await chatService.uploadSVG(
-                    data,
-                    filename: url.lastPathComponent,
-                    messageId: ensuredMessageId
-                )
-                pendingSvgs.append(attachment)
-            } catch {
-                print("❌ 無法匯入 \(url.lastPathComponent): \(error)")
-            }
-        }
-        
-        isUploading = false
     }
 }
 
@@ -524,36 +475,6 @@ struct NameInputModal: View {
         guard !trimmed.isEmpty else { return }
         onSubmit(trimmed)
         isPresented = false
-    }
-}
-
-// MARK: - Document Picker
-struct DocumentPicker: UIViewControllerRepresentable {
-    let types: [UTType]
-    var onPick: ([URL]) -> Void
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onPick: onPick)
-    }
-    
-    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        let controller = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: true)
-        controller.allowsMultipleSelection = true
-        controller.delegate = context.coordinator
-        return controller
-    }
-    
-    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) { }
-    
-    class Coordinator: NSObject, UIDocumentPickerDelegate {
-        let onPick: ([URL]) -> Void
-        init(onPick: @escaping ([URL]) -> Void) { self.onPick = onPick }
-        
-        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-            onPick(urls)
-        }
-        
-        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { }
     }
 }
 
