@@ -12,6 +12,7 @@ struct ChatView: View {
     @StateObject var chatService = ChatService()
     @State private var showDrawing = false
     @State private var showNameInput = false
+    @State private var showPairingSheet = false
     @State private var showFilePicker = false
     @State private var messageText = ""
     @State private var pendingSvgs: [SvgAttachment] = []
@@ -38,6 +39,20 @@ struct ChatView: View {
                     }
                     
                     Spacer()
+                    
+                    Button {
+                        showPairingSheet = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "rectangle.3.group")
+                            Text("連線設定")
+                        }
+                        .font(.caption)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(8)
+                    }
                     
                     if chatService.isConnected {
                         Circle()
@@ -162,6 +177,13 @@ struct ChatView: View {
                         chatService.setUserName(name)
                         chatService.connect()
                     }
+                )
+            }
+            
+            if showPairingSheet {
+                PairingSheet(
+                    isPresented: $showPairingSheet,
+                    chatService: chatService
                 )
             }
         }

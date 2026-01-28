@@ -52,9 +52,17 @@ class ChatService: NSObject, ObservableObject {
     
     func setRoom(_ newRoom: String) {
         room = newRoom
+        messages = []
+        error = nil
         UserDefaults.standard.set(newRoom, forKey: "chatRoom")
         disconnect()
         connect()
+    }
+
+    /// 建立新的房間並立即切換
+    func createNewRoom() {
+        let newRoomId = String(UUID().uuidString.prefix(8)).lowercased()
+        setRoom(newRoomId)
     }
     
     // MARK: - WebSocket Connection

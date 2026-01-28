@@ -44,6 +44,14 @@ struct PairingSheet: View {
                             Image(systemName: "doc.on.doc")
                                 .foregroundColor(.blue)
                         }
+                        
+                        Button(action: {
+                            chatService.createNewRoom()
+                            roomId = chatService.room
+                        }) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .foregroundColor(.blue)
+                        }
                     }
                     .padding()
                     .background(Color.gray.opacity(0.1))
@@ -107,6 +115,11 @@ struct PairingSheet: View {
             .background(Color.white)
             .cornerRadius(12)
             .padding()
+            .onAppear {
+                // 預填目前使用者與房間
+                roomId = chatService.room
+                userName = chatService.userName
+            }
         }
     }
     
