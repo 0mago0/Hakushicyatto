@@ -494,12 +494,20 @@ struct MessageListView: View {
         } else {
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(spacing: 12) {
+                    LazyVStack(spacing: 12) {
                         ForEach(messages) { message in
                             MessageBubble(message: message, isMe: message.user == userName)
                         }
                     }
                     .padding()
+                }
+                .onAppear {
+                    // 首次進入直接跳到底部
+                    if let last = messages.last {
+                        DispatchQueue.main.async {
+                            proxy.scrollTo(last.id, anchor: .bottom)
+                        }
+                    }
                 }
                 .onChange(of: messages.count) { _ in
                     if let lastMessage = messages.last {
