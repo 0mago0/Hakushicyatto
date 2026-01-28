@@ -47,7 +47,7 @@ struct ChatView: View {
                         .font(.caption)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(Color.blue.opacity(0.1))
+                        .background(Color(.tertiarySystemFill))
                         .cornerRadius(8)
                     }
                     
@@ -102,7 +102,7 @@ struct ChatView: View {
                                     .frame(width: 60, height: 60)
                                     .cornerRadius(6)
                                 .frame(width: 60, height: 60)
-                                .background(Color.gray.opacity(0.2))
+                                .background(Color(.secondarySystemBackground))
                                 .cornerRadius(4)
                                 .overlay(alignment: .topTrailing) {
                                     Image(systemName: "xmark.circle.fill")
@@ -143,7 +143,7 @@ struct ChatView: View {
                     .padding(.horizontal)
                     .padding(.vertical, 8)
                 }
-                .background(Color.gray.opacity(0.05))
+                .background(Color(.secondarySystemBackground))
             }
             
             // Drawing Sheet

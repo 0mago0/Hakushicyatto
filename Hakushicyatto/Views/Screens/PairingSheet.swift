@@ -18,7 +18,7 @@ struct PairingSheet: View {
     
     var body: some View {
         ZStack {
-            Color.black.opacity(0.3)
+            Color.black.opacity(0.35)
                 .ignoresSafeArea()
                 .onTapGesture { isPresented = false }
             
@@ -54,7 +54,7 @@ struct PairingSheet: View {
                         }
                     }
                     .padding()
-                    .background(Color.gray.opacity(0.1))
+                    .background(Color(.secondarySystemBackground))
                     .cornerRadius(8)
                 }
                 
@@ -66,14 +66,18 @@ struct PairingSheet: View {
                         .foregroundColor(.gray)
                     
                     TextField("輸入你的名稱", text: $userName)
-                        .textFieldStyle(.roundedBorder)
+                        .padding(10)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(8)
                     
                     Text("對方的房間 ID:")
                         .font(.caption)
                         .foregroundColor(.gray)
                     
                     TextField("輸入對方的房間 ID", text: $roomId)
-                        .textFieldStyle(.roundedBorder)
+                        .padding(10)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(8)
                 }
                 
                 if let error = error {
@@ -112,7 +116,7 @@ struct PairingSheet: View {
                 Spacer()
             }
             .padding()
-            .background(Color.white)
+            .background(Color(.systemBackground))
             .cornerRadius(12)
             .padding()
             .onAppear {

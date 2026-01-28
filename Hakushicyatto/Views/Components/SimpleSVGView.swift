@@ -11,6 +11,7 @@ import SVGKit
 
 struct SimpleSVGView: View {
     let urlString: String
+    @Environment(\.colorScheme) private var colorScheme
     
     private enum Phase {
         case empty
@@ -69,9 +70,21 @@ struct SimpleSVGView: View {
                 }
             }
         case .success(let image):
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFit()
+            Group {
+                if colorScheme == .dark {
+                    Image(uiImage: image)
+                        .renderingMode(.original)
+                        .resizable()
+                        .scaledToFit()
+                        .compositingGroup()
+                        .colorInvert()
+                } else {
+                    Image(uiImage: image)
+                        .renderingMode(.original)
+                        .resizable()
+                        .scaledToFit()
+                }
+            }
         }
     }
     

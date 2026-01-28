@@ -112,10 +112,12 @@ struct DrawingSheet: View {
             if isSending {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.black.opacity(0.3))
+                    .background(Color.black.opacity(0.35))
             }
         }
-        .background(Color.white)
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
     }
     
     /// 上傳當前筆跡並讓使用者可以繼續寫下一個字
