@@ -482,6 +482,9 @@ struct MessageListView: View {
     let messages: [ChatMessage]
     let userName: String
     
+    @State private var userIsDragging = false
+    private let bottomAnchorID = "messages-bottom-anchor"
+    
     var body: some View {
         if messages.isEmpty {
             VStack {
@@ -498,23 +501,38 @@ struct MessageListView: View {
                         ForEach(messages) { message in
                             MessageBubble(message: message, isMe: message.user == userName)
                         }
+                        // 底部錨點，確保可捲到最底
+                        Color.clear
+                            .frame(height: 1)
+                            .id(bottomAnchorID)
                     }
                     .padding()
                 }
+                .simultaneousGesture(
+                    DragGesture()
+                        .onChanged { _ in userIsDragging = true }
+                        .onEnded { _ in userIsDragging = false }
+                )
                 .onAppear {
-                    // 首次進入直接跳到底部
-                    if let last = messages.last {
-                        DispatchQueue.main.async {
-                            proxy.scrollTo(last.id, anchor: .bottom)
+                    scrollToBottom(proxy)
+                }
+                .onChange(of: messages.count) { _ in
+                    guard !userIsDragging else { return }
+                    // 延後執行，確保新訊息完成佈局再滾動
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        withAnimation(.easeOut(duration: 0.18)) {
+                            scrollToBottom(proxy)
                         }
                     }
                 }
-                .onChange(of: messages.count) { _ in
-                    if let lastMessage = messages.last {
-                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
-                    }
-                }
             }
+        }
+    }
+    
+    private func scrollToBottom(_ proxy: ScrollViewProxy) {
+        // 優先滾到底部錨點，確保即使沒有新訊息或資料源異動也能對齊
+        withAnimation(.easeOut(duration: 0.18)) {
+            proxy.scrollTo(bottomAnchorID, anchor: .bottom)
         }
     }
 }
