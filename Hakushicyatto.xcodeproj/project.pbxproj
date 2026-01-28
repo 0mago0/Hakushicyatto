@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		37B28B182F2A3F80004A5C69 /* SVGKit in Frameworks */ = {isa = PBXBuildFile; productRef = 37B28B172F2A3F80004A5C69 /* SVGKit */; };
+		37B28B1A2F2A3F80004A5C69 /* SVGKitSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 37B28B192F2A3F80004A5C69 /* SVGKitSwift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		37B28A342F29DB1E004A5C69 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +57,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				37B28B1A2F2A3F80004A5C69 /* SVGKitSwift in Frameworks */,
+				37B28B182F2A3F80004A5C69 /* SVGKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +119,8 @@
 			);
 			name = Hakushicyatto;
 			packageProductDependencies = (
+				37B28B172F2A3F80004A5C69 /* SVGKit */,
+				37B28B192F2A3F80004A5C69 /* SVGKitSwift */,
 			);
 			productName = Hakushicyatto;
 			productReference = 37B28A262F29DB1C004A5C69 /* Hakushicyatto.app */;
@@ -195,6 +204,9 @@
 			);
 			mainGroup = 37B28A1D2F29DB1C004A5C69;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				37B28B162F2A3F68004A5C69 /* XCRemoteSwiftPackageReference "SVGKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 37B28A272F29DB1C004A5C69 /* Products */;
 			projectDirPath = "";
@@ -578,6 +590,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		37B28B162F2A3F68004A5C69 /* XCRemoteSwiftPackageReference "SVGKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SVGKit/SVGKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		37B28B172F2A3F80004A5C69 /* SVGKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 37B28B162F2A3F68004A5C69 /* XCRemoteSwiftPackageReference "SVGKit" */;
+			productName = SVGKit;
+		};
+		37B28B192F2A3F80004A5C69 /* SVGKitSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 37B28B162F2A3F68004A5C69 /* XCRemoteSwiftPackageReference "SVGKit" */;
+			productName = SVGKitSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 37B28A1E2F29DB1C004A5C69 /* Project object */;
 }
