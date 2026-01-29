@@ -249,9 +249,42 @@ struct MessageBubble: View {
     
     private func formatTime(_ timestamp: TimeInterval) -> String {
         let date = Date(timeIntervalSince1970: timestamp)
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // 取得小時用於判斷時段
+        let hour = calendar.component(.hour, from: date)
+        
+        // 判斷時段
+        let period: String
+        switch hour {
+        case 0..<6:
+            period = "凌晨"
+        case 6..<12:
+            period = "上午"
+        case 12:
+            period = "中午"
+        case 13..<18:
+            period = "下午"
+        default:
+            period = "晚上"
+        }
+        
+        // 格式化時間 HH:mm
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm"
+        let timeString = timeFormatter.string(from: date)
+        
+        // 判斷是否為當天
+        if calendar.isDate(date, inSameDayAs: now) {
+            return "\(period) \(timeString)"
+        } else {
+            // 格式化日期 yyyy/MM/dd
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy/MM/dd"
+            let dateString = dateFormatter.string(from: date)
+            return "\(dateString) \(period) \(timeString)"
+        }
     }
 }
 
