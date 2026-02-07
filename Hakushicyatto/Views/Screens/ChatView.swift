@@ -225,20 +225,30 @@ struct MessageBubble: View {
                     .fontWeight(.bold)
                     .foregroundColor(isMe ? .blue : .gray)
                 
-                InlineMessageContent(
-                    text: message.content,
-                    svgs: message.svgs ?? [],
-                    isMe: isMe
-                )
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(isMe ? Color.blue.opacity(0.15) : Color.gray.opacity(0.15))
-                .cornerRadius(16)
-                .frame(maxWidth: UIScreen.main.bounds.width * 0.75, alignment: isMe ? .trailing : .leading)
-                
-                Text(formatTime(message.timestamp))
-                    .font(.caption2)
-                    .foregroundColor(.gray)
+                HStack(alignment: .bottom) {
+                    if isMe {
+                        Text(formatTime(message.timestamp))
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    InlineMessageContent(
+                        text: message.content,
+                        svgs: message.svgs ?? [],
+                        isMe: isMe
+                    )
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(isMe ? Color.blue.opacity(0.15) : Color.gray.opacity(0.15))
+                    .cornerRadius(16)
+                    .frame(alignment: isMe ? .trailing : .leading)
+                    
+                    if !isMe {
+                        Text(formatTime(message.timestamp))
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                    }
+                }
             }
             
             if !isMe { Spacer(minLength: 12) }
