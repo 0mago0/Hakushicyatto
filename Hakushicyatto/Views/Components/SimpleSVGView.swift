@@ -23,6 +23,7 @@ struct SimpleSVGView: View {
     @State private var phase: Phase = .empty
     @State private var lastURL: String?
     @State private var retryCount = 0
+    @State private var isAutoRetrying = false
     
     private let maxRetries = 5
     
@@ -53,21 +54,11 @@ struct SimpleSVGView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.clear)
         case .failure:
-            VStack {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundColor(.orange)
-                Text("無法加載 SVG")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                Button {
-                    Task {
-                        phase = .loading
-                        await load()
-                    }
-                } label: {
-                    Text("重試")
-                        .font(.caption)
-                }
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.clear)
+            .task {
+                await autoRetryAfterFailure()
             }
         case .success(let image):
             Group {
@@ -137,6 +128,25 @@ struct SimpleSVGView: View {
         // Exponential backoff: 0.3s, 0.6s, 1.2s, 2.4s, 4.8s
         let delaySeconds = pow(2.0, Double(retryCount - 1)) * 0.3
         try? await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
+        await load()
+    }
+
+    private func autoRetryAfterFailure() async {
+        await MainActor.run {
+            if isAutoRetrying { return }
+            isAutoRetrying = true
+        }
+
+        // Cooldown before restarting the retry cycle
+        let delaySeconds = 3.0
+        try? await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
+
+        await MainActor.run {
+            retryCount = 0
+            phase = .loading
+            isAutoRetrying = false
+        }
+
         await load()
     }
 }
