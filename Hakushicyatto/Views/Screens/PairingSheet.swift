@@ -13,6 +13,7 @@ struct PairingSheet: View {
     
     @State private var roomId = ""
     @State private var userName = ""
+    @State private var roomNote = ""
     @State private var isLoading = false
     @State private var error: String?
     
@@ -78,6 +79,77 @@ struct PairingSheet: View {
                         .padding(10)
                         .background(Color(.secondarySystemBackground))
                         .cornerRadius(8)
+
+                    Text("備注:")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+
+                    TextField("例如：同學A / 週三團隊", text: $roomNote)
+                        .padding(10)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(8)
+                }
+
+                if !chatService.recentRooms.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("房間紀錄")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+
+                        ScrollView {
+                            VStack(spacing: 8) {
+                                ForEach(chatService.recentRooms) { room in
+                                    HStack(spacing: 10) {
+                                        Button {
+                                            roomId = room.roomId
+                                            roomNote = room.note ?? ""
+                                        } label: {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(room.roomId)
+                                                    .font(.system(.body, design: .monospaced))
+                                                    .lineLimit(1)
+
+                                                if let note = room.note, !note.isEmpty {
+                                                    Text(note)
+                                                        .font(.caption)
+                                                        .foregroundColor(.gray)
+                                                        .lineLimit(1)
+                                                }
+                                            }
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                        }
+
+                                        Button {
+                                            chatService.toggleStar(for: room.roomId)
+                                        } label: {
+                                            Image(systemName: room.isStarred ? "star.fill" : "star")
+                                                .foregroundColor(room.isStarred ? .yellow : .gray)
+                                        }
+
+                                        Button {
+                                            chatService.removeRecentRoom(room.roomId)
+                                        } label: {
+                                            Image(systemName: "trash")
+                                                .foregroundColor(.red)
+                                        }
+                                    }
+                                    .padding(10)
+                                    .background(Color(.secondarySystemBackground))
+                                    .cornerRadius(8)
+                                }
+                            }
+                        }
+                        .frame(maxHeight: 180)
+
+                        HStack {
+                            Spacer()
+                            Button("清除紀錄") {
+                                chatService.clearRecentRooms()
+                            }
+                            .font(.caption)
+                            .foregroundColor(.red)
+                        }
+                    }
                 }
                 
                 if let error = error {
@@ -133,6 +205,7 @@ struct PairingSheet: View {
         
         chatService.setUserName(userName)
         chatService.setRoom(roomId)
+        chatService.addRoomToHistory(roomId, note: roomNote)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             isLoading = false

@@ -14,11 +14,13 @@ class ChatService: NSObject, ObservableObject {
     @Published var error: String?
     @Published var room: String = UUID().uuidString.prefix(8).lowercased()
     @Published var userName: String = "User"
+    @Published var recentRooms: [RecentRoom] = []
     
     private var webSocket: URLSessionWebSocketTask?
     private let baseURL: String
     private var userId: String = UUID().uuidString
     private var receiveTask: Task<Void, Never>?
+    private let recentRoomsKey = "recentRooms"
     
     init(baseURL: String = "") {
         self.baseURL = baseURL.isEmpty ? NetworkConfig.partyWSURL : baseURL
@@ -43,6 +45,15 @@ class ChatService: NSObject, ObservableObject {
         if let savedRoom = UserDefaults.standard.string(forKey: "chatRoom") {
             room = savedRoom
         }
+
+        if let savedData = UserDefaults.standard.data(forKey: recentRoomsKey),
+           let decoded = try? JSONDecoder().decode([RecentRoom].self, from: savedData) {
+            recentRooms = decoded
+        } else if let savedRecentRooms = UserDefaults.standard.stringArray(forKey: recentRoomsKey) {
+            recentRooms = savedRecentRooms.map { RecentRoom(roomId: $0, note: "") }
+        }
+
+        addRoomToHistory(room, note: nil)
     }
     
     func setUserName(_ name: String) {
@@ -55,6 +66,7 @@ class ChatService: NSObject, ObservableObject {
         messages = []
         error = nil
         UserDefaults.standard.set(newRoom, forKey: "chatRoom")
+        addRoomToHistory(newRoom, note: nil)
         disconnect()
         connect()
     }
@@ -64,7 +76,81 @@ class ChatService: NSObject, ObservableObject {
         let newRoomId = String(UUID().uuidString.prefix(8)).lowercased()
         setRoom(newRoomId)
     }
+
+    // MARK: - Room History
+    func addRoomToHistory(_ roomId: String, note: String?) {
+        let trimmed = roomId.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !trimmed.isEmpty else { return }
+
+        let trimmedNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let noteToSave = (trimmedNote?.isEmpty ?? true) ? nil : trimmedNote
+
+        let existing = recentRooms.first { $0.roomId.lowercased() == trimmed }
+        let isStarred = existing?.isStarred ?? false
+        recentRooms.removeAll { $0.roomId.lowercased() == trimmed }
+        recentRooms.insert(RecentRoom(roomId: trimmed, note: noteToSave, isStarred: isStarred), at: 0)
+
+        sortRecentRooms()
+        limitRecentRooms()
+
+        saveRecentRooms()
+    }
+
+    func removeRecentRoom(_ roomId: String) {
+        let trimmed = roomId.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        recentRooms.removeAll { $0.roomId.lowercased() == trimmed }
+        saveRecentRooms()
+    }
+
+    func clearRecentRooms() {
+        recentRooms = []
+        saveRecentRooms()
+    }
+
+    func toggleStar(for roomId: String) {
+        let trimmed = roomId.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard let index = recentRooms.firstIndex(where: { $0.roomId.lowercased() == trimmed }) else { return }
+        let current = recentRooms[index]
+        recentRooms[index] = RecentRoom(roomId: current.roomId, note: current.note, isStarred: !current.isStarred)
+        sortRecentRooms()
+        saveRecentRooms()
+    }
+
+    private func saveRecentRooms() {
+        if let data = try? JSONEncoder().encode(recentRooms) {
+            UserDefaults.standard.set(data, forKey: recentRoomsKey)
+        }
+    }
+
+    private func sortRecentRooms() {
+        recentRooms = recentRooms.sorted { lhs, rhs in
+            if lhs.isStarred != rhs.isStarred {
+                return lhs.isStarred && !rhs.isStarred
+            }
+            return true
+        }
+    }
+
+    private func limitRecentRooms() {
+        if recentRooms.count > 10 {
+            recentRooms = Array(recentRooms.prefix(10))
+        }
+    }
     
+
+struct RecentRoom: Identifiable, Codable, Hashable {
+    let id: String
+    let roomId: String
+    let note: String?
+    let isStarred: Bool
+
+    init(roomId: String, note: String?, isStarred: Bool = false) {
+        self.roomId = roomId
+        self.note = note
+        self.isStarred = isStarred
+        self.id = roomId
+    }
+}
     // MARK: - WebSocket Connection
     func connect() {
         // Party.js URL 格式: wss://partykit-server.com/parties/chat/room-id
