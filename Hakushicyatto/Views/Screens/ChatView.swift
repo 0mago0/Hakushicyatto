@@ -258,43 +258,11 @@ struct MessageBubble: View {
     }
     
     private func formatTime(_ timestamp: TimeInterval) -> String {
-        let date = Date(timeIntervalSince1970: timestamp)
-        let calendar = Calendar.current
-        let now = Date()
-        
-        // 取得小時用於判斷時段
-        let hour = calendar.component(.hour, from: date)
-        
-        // 判斷時段
-        let period: String
-        switch hour {
-        case 0..<6:
-            period = "凌晨"
-        case 6..<12:
-            period = "上午"
-        case 12:
-            period = "中午"
-        case 13..<18:
-            period = "下午"
-        default:
-            period = "晚上"
-        }
-        
-        // 格式化時間 HH:mm
+        let seconds = timestamp > 100000000000 ? timestamp / 1000 : timestamp
+        let date = Date(timeIntervalSince1970: seconds)
         let timeFormatter = DateFormatter()
         timeFormatter.dateFormat = "HH:mm"
-        let timeString = timeFormatter.string(from: date)
-        
-        // 判斷是否為當天
-        if calendar.isDate(date, inSameDayAs: now) {
-            return "\(period) \(timeString)"
-        } else {
-            // 格式化日期 yyyy/MM/dd
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy/MM/dd"
-            let dateString = dateFormatter.string(from: date)
-            return "\(dateString) \(period) \(timeString)"
-        }
+        return timeFormatter.string(from: date)
     }
 }
 
@@ -541,7 +509,14 @@ struct MessageListView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(messages) { message in
+                        ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
+                            if shouldShowDate(at: index) {
+                                Text(formatDate(message.timestamp))
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                    .padding(.vertical, 8)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                            }
                             MessageBubble(message: message, isMe: message.user == userName)
                         }
                         // 底部錨點，確保可捲到最底
@@ -577,6 +552,28 @@ struct MessageListView: View {
         withAnimation(.easeOut(duration: 0.18)) {
             proxy.scrollTo(bottomAnchorID, anchor: .bottom)
         }
+    }
+    
+    private func shouldShowDate(at index: Int) -> Bool {
+        guard index > 0 else { return true }
+        let currentMsg = messages[index]
+        let previousMsg = messages[index - 1]
+        
+        let currentSeconds = currentMsg.timestamp > 100000000000 ? currentMsg.timestamp / 1000 : currentMsg.timestamp
+        let previousSeconds = previousMsg.timestamp > 100000000000 ? previousMsg.timestamp / 1000 : previousMsg.timestamp
+        
+        let currentDate = Date(timeIntervalSince1970: currentSeconds)
+        let previousDate = Date(timeIntervalSince1970: previousSeconds)
+        
+        return !Calendar.current.isDate(currentDate, inSameDayAs: previousDate)
+    }
+    
+    private func formatDate(_ timestamp: TimeInterval) -> String {
+        let seconds = timestamp > 100000000000 ? timestamp / 1000 : timestamp
+        let date = Date(timeIntervalSince1970: seconds)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy/MM/dd"
+        return formatter.string(from: date)
     }
 }
 
