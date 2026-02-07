@@ -12,13 +12,22 @@ struct ChatView: View {
     @State private var showDrawing = false
     @State private var showNameInput = false
     @State private var showPairingSheet = false
+    @State private var showThemePicker = false
     @State private var messageText = ""
     @State private var pendingSvgs: [SvgAttachment] = []
     @State private var currentMessageId: String?
     @State private var showCopyRoomAlert = false
+    @AppStorage("chatThemeId") private var chatThemeId: String = ChatTheme.classic.id
+
+    private var theme: ChatTheme {
+        ChatTheme.theme(for: chatThemeId)
+    }
     
     var body: some View {
         ZStack {
+            theme.background
+                .ignoresSafeArea()
+
             VStack {
                 // Header
                 HStack {
@@ -26,6 +35,7 @@ struct ChatView: View {
                         Text("聊天室")
                             .font(.title2)
                             .fontWeight(.bold)
+                            .foregroundColor(theme.onBackground)
                         Text("房間: \(chatService.room)")
                             .font(.caption)
                             .foregroundColor(.gray)
@@ -47,7 +57,23 @@ struct ChatView: View {
                         .font(.caption)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(Color(.tertiarySystemFill))
+                        .foregroundColor(theme.onSurface)
+                        .background(theme.surface)
+                        .cornerRadius(8)
+                    }
+
+                    Button {
+                        showThemePicker = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "paintpalette")
+                            Text("配色")
+                        }
+                        .font(.caption)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .foregroundColor(theme.onSurface)
+                        .background(theme.surface)
                         .cornerRadius(8)
                     }
                     
@@ -89,7 +115,7 @@ struct ChatView: View {
                 }
                 
                 // Messages List
-                MessageListView(messages: chatService.messages, userName: chatService.userName)
+                MessageListView(messages: chatService.messages, userName: chatService.userName, theme: theme)
                 
                 Divider()
                 
@@ -102,7 +128,7 @@ struct ChatView: View {
                                     .frame(width: 60, height: 60)
                                     .cornerRadius(6)
                                 .frame(width: 60, height: 60)
-                                .background(Color(.secondarySystemBackground))
+                                .background(theme.surface)
                                 .cornerRadius(4)
                                 .overlay(alignment: .topTrailing) {
                                     Image(systemName: "xmark.circle.fill")
@@ -127,7 +153,7 @@ struct ChatView: View {
                         Button(action: { showDrawing = true }) {
                             Image(systemName: "pencil.tip")
                                 .font(.system(size: 18))
-                                .foregroundColor(.blue)
+                                .foregroundColor(theme.accent)
                         }
                         
                         TextField("輸入訊息...", text: $messageText)
@@ -136,14 +162,14 @@ struct ChatView: View {
                         Button(action: sendMessage) {
                             Image(systemName: "paperplane.fill")
                                 .font(.system(size: 18))
-                                .foregroundColor(.blue)
+                                .foregroundColor(theme.accent)
                         }
                         .disabled((messageText.trimmingCharacters(in: .whitespaces).isEmpty && pendingSvgs.isEmpty) || !chatService.isConnected)
                     }
                     .padding(.horizontal)
                     .padding(.vertical, 8)
                 }
-                .background(Color(.secondarySystemBackground))
+                .background(theme.surface)
             }
             
             // Drawing Sheet
@@ -151,6 +177,7 @@ struct ChatView: View {
                 DrawingSheet(
                     isPresented: $showDrawing,
                     chatService: chatService,
+                    theme: theme,
                     currentMessageId: currentMessageId,
                     setMessageId: { newId in currentMessageId = newId },
                     onSaveSVG: { svg in
@@ -162,6 +189,7 @@ struct ChatView: View {
             if showNameInput {
                 NameInputModal(
                     isPresented: $showNameInput,
+                    theme: theme,
                     initialName: chatService.userName == "User" ? "" : chatService.userName,
                     onSubmit: { name in
                         chatService.setUserName(name)
@@ -173,7 +201,15 @@ struct ChatView: View {
             if showPairingSheet {
                 PairingSheet(
                     isPresented: $showPairingSheet,
-                    chatService: chatService
+                    chatService: chatService,
+                    theme: theme
+                )
+            }
+
+            if showThemePicker {
+                ThemePickerSheet(
+                    isPresented: $showThemePicker,
+                    selectedThemeId: $chatThemeId
                 )
             }
         }
@@ -213,6 +249,7 @@ struct ChatView: View {
 struct MessageBubble: View {
     let message: ChatMessage
     let isMe: Bool
+    let theme: ChatTheme
     @State private var expandedMessage = false
     
     var body: some View {
@@ -223,7 +260,7 @@ struct MessageBubble: View {
                 Text(message.user)
                     .font(.caption)
                     .fontWeight(.bold)
-                    .foregroundColor(isMe ? .blue : .gray)
+                    .foregroundColor(isMe ? theme.accent : .gray)
                 
                 HStack(alignment: .bottom) {
                     if isMe {
@@ -239,7 +276,7 @@ struct MessageBubble: View {
                     )
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(isMe ? Color.blue.opacity(0.15) : Color.gray.opacity(0.15))
+                    .background(isMe ? theme.bubbleMe.opacity(0.18) : theme.bubbleOther.opacity(0.18))
                     .cornerRadius(16)
                     .frame(alignment: isMe ? .trailing : .leading)
                     
@@ -428,12 +465,14 @@ struct SVGInlineView: View {
 // MARK: - Name Input Modal
 struct NameInputModal: View {
     @Binding var isPresented: Bool
+    let theme: ChatTheme
     @State private var name: String
     @FocusState private var isFocused: Bool
     var onSubmit: (String) -> Void
     
-    init(isPresented: Binding<Bool>, initialName: String, onSubmit: @escaping (String) -> Void) {
+    init(isPresented: Binding<Bool>, theme: ChatTheme, initialName: String, onSubmit: @escaping (String) -> Void) {
         _isPresented = isPresented
+        self.theme = theme
         _name = State(initialValue: initialName)
         self.onSubmit = onSubmit
     }
@@ -465,14 +504,14 @@ struct NameInputModal: View {
                     Text("開始聊天")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(name.trimmingCharacters(in: .whitespaces).isEmpty ? Color.gray.opacity(0.2) : Color.blue)
+                        .background(name.trimmingCharacters(in: .whitespaces).isEmpty ? Color.gray.opacity(0.2) : theme.accent)
                         .foregroundColor(name.trimmingCharacters(in: .whitespaces).isEmpty ? .gray : .white)
                         .cornerRadius(8)
                 }
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             .padding()
-            .background(Color.white)
+            .background(theme.surface)
             .cornerRadius(12)
             .padding(32)
             .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { isFocused = true } }
@@ -492,6 +531,7 @@ struct NameInputModal: View {
 struct MessageListView: View {
     let messages: [ChatMessage]
     let userName: String
+    let theme: ChatTheme
     
     @State private var userIsDragging = false
     private let bottomAnchorID = "messages-bottom-anchor"
@@ -517,7 +557,7 @@ struct MessageListView: View {
                                     .padding(.vertical, 8)
                                     .frame(maxWidth: .infinity, alignment: .center)
                             }
-                            MessageBubble(message: message, isMe: message.user == userName)
+                            MessageBubble(message: message, isMe: message.user == userName, theme: theme)
                         }
                         // 底部錨點，確保可捲到最底
                         Color.clear
@@ -574,6 +614,73 @@ struct MessageListView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy/MM/dd"
         return formatter.string(from: date)
+    }
+}
+
+// MARK: - Theme Picker
+struct ThemePickerSheet: View {
+    @Binding var isPresented: Bool
+    @Binding var selectedThemeId: String
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.35)
+                .ignoresSafeArea()
+                .onTapGesture { isPresented = false }
+
+            VStack(spacing: 16) {
+                Text("聊天室配色")
+                    .font(.title3)
+                    .fontWeight(.bold)
+
+                VStack(spacing: 10) {
+                    ForEach(ChatTheme.all) { theme in
+                        Button {
+                            selectedThemeId = theme.id
+                            isPresented = false
+                        } label: {
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(theme.name)
+                                        .font(.body)
+                                        .fontWeight(.semibold)
+
+                                    HStack(spacing: 6) {
+                                        ForEach(Array(theme.swatches.enumerated()), id: \.offset) { _, color in
+                                            Circle()
+                                                .fill(color)
+                                                .frame(width: 16, height: 16)
+                                        }
+                                    }
+                                }
+
+                                Spacer()
+
+                                if selectedThemeId == theme.id {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(theme.accent)
+                                }
+                            }
+                            .padding(12)
+                            .background(Color(.secondarySystemBackground))
+                            .cornerRadius(10)
+                        }
+                    }
+                }
+
+                Button("關閉") {
+                    isPresented = false
+                }
+                .font(.caption)
+                .foregroundColor(.gray)
+            }
+            .padding()
+            .background(Color(.systemBackground))
+            .cornerRadius(12)
+            .padding(32)
+        }
+        .transition(.opacity)
+        .animation(.easeInOut, value: isPresented)
     }
 }
 

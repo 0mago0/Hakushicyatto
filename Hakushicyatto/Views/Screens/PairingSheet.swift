@@ -10,6 +10,7 @@ import SwiftUI
 struct PairingSheet: View {
     @Binding var isPresented: Bool
     @ObservedObject var chatService: ChatService
+    let theme: ChatTheme
     
     @State private var roomId = ""
     @State private var userName = ""
@@ -43,7 +44,7 @@ struct PairingSheet: View {
                             UIPasteboard.general.string = chatService.room
                         }) {
                             Image(systemName: "doc.on.doc")
-                                .foregroundColor(.blue)
+                                .foregroundColor(theme.accent)
                         }
                         
                         Button(action: {
@@ -51,11 +52,11 @@ struct PairingSheet: View {
                             roomId = chatService.room
                         }) {
                             Image(systemName: "arrow.triangle.2.circlepath")
-                                .foregroundColor(.blue)
+                                .foregroundColor(theme.accent)
                         }
                     }
                     .padding()
-                    .background(Color(.secondarySystemBackground))
+                    .background(theme.surface)
                     .cornerRadius(8)
                 }
                 
@@ -68,7 +69,7 @@ struct PairingSheet: View {
                     
                     TextField("輸入你的名稱", text: $userName)
                         .padding(10)
-                        .background(Color(.secondarySystemBackground))
+                        .background(theme.surface)
                         .cornerRadius(8)
                     
                     Text("對方的房間 ID:")
@@ -77,7 +78,7 @@ struct PairingSheet: View {
                     
                     TextField("輸入對方的房間 ID", text: $roomId)
                         .padding(10)
-                        .background(Color(.secondarySystemBackground))
+                        .background(theme.surface)
                         .cornerRadius(8)
 
                     Text("備注:")
@@ -86,7 +87,7 @@ struct PairingSheet: View {
 
                     TextField("例如：同學A / 週三團隊", text: $roomNote)
                         .padding(10)
-                        .background(Color(.secondarySystemBackground))
+                        .background(theme.surface)
                         .cornerRadius(8)
                 }
 
@@ -134,7 +135,7 @@ struct PairingSheet: View {
                                         }
                                     }
                                     .padding(10)
-                                    .background(Color(.secondarySystemBackground))
+                                    .background(theme.surface)
                                     .cornerRadius(8)
                                 }
                             }
@@ -178,7 +179,7 @@ struct PairingSheet: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(12)
-                        .background(Color.blue)
+                        .background(theme.accent)
                         .foregroundColor(.white)
                         .cornerRadius(8)
                     }
@@ -188,7 +189,7 @@ struct PairingSheet: View {
                 Spacer()
             }
             .padding()
-            .background(Color(.systemBackground))
+            .background(theme.background)
             .cornerRadius(12)
             .padding()
             .onAppear {
@@ -219,5 +220,5 @@ struct PairingSheet: View {
 }
 
 #Preview {
-    PairingSheet(isPresented: .constant(true), chatService: ChatService())
+    PairingSheet(isPresented: .constant(true), chatService: ChatService(), theme: .classic)
 }

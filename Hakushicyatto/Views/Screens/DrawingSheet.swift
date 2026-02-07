@@ -11,6 +11,7 @@ import PencilKit
 struct DrawingSheet: View {
     @Binding var isPresented: Bool
     @ObservedObject var chatService: ChatService
+    let theme: ChatTheme
     var currentMessageId: String?
     var setMessageId: (String) -> Void
     var onSaveSVG: (SvgAttachment) -> Void
@@ -99,7 +100,7 @@ struct DrawingSheet: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(10)
-                            .background(Color.green)
+                            .background(theme.accent)
                             .foregroundColor(.white)
                             .cornerRadius(6)
                         }
@@ -116,7 +117,7 @@ struct DrawingSheet: View {
             }
         }
         .padding()
-        .background(Color(.systemBackground))
+        .background(theme.background)
         .cornerRadius(12)
     }
     
@@ -172,6 +173,7 @@ struct DrawingSheet: View {
     DrawingSheet(
         isPresented: .constant(true),
         chatService: ChatService(),
+        theme: .classic,
         currentMessageId: nil,
         setMessageId: { _ in },
         onSaveSVG: { _ in }
