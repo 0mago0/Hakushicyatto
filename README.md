@@ -3,6 +3,7 @@
 Hakushicyatto 是一個使用 Swift 製作的 iOS 手寫聊天室 App。  
 使用者可以在聊天室中輸入文字，也可以透過手寫板書寫內容，將筆跡轉換成 SVG 後上傳，並在聊天室中顯示手寫訊息。
 
+Demo Video: [https://youtu.be/ETT7GuwoKHw](https://youtu.be/zCp44g1GpPw?si=eoyns7XOo2nsVjE5)
 ## 專案動機
 
 一般聊天室大多以文字輸入為主，但在教學、筆記、語言學習或手寫練習情境中，使用者可能需要保留「手寫筆跡」本身。
